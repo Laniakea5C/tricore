@@ -1,6 +1,8 @@
 # TriCore · 电子信息战士技能菜单
 
+> **我把电子信息四年的学习路线，做成了赛博朋克 2077 的技能树。**
 > 面向电子信息专业学生的学习地图 App：知识图谱 + 精细学习路线 + Demo 提示词工坊 + AI 学习导师。
+> **I turned a four-year electronics curriculum into a Cyberpunk 2077 skill tree.**
 > An Android study-map app for electronics & CS students: knowledge graph, learning routes, prompt workbench, and an AI tutor.
 
 [![Platform](https://img.shields.io/badge/Platform-Android%2026%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
