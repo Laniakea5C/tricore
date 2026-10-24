@@ -1,0 +1,39 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+*.hprof
+
+# Local config & secrets
+local.properties
+*.jks
+*.keystore
+keystore.properties
+
+# Media / scratch
+shots2/
+*.apk
+*.aab
+*.log
+*.xml.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local scratch (not part of the project)
+patch_*.py
+/*.xml
+/*.txt
+shots2/
+*.bak
+
+shots/

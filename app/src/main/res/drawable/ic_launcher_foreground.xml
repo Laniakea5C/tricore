@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+
+    <group android:scaleX="0.84" android:scaleY="0.84" android:pivotX="54" android:pivotY="54">
+    <!-- outer hex frame -->
+    <path android:strokeColor="#54E4FF" android:strokeWidth="2.4" android:fillColor="#00000000"
+        android:pathData="M54,7 L94,30 L94,78 L54,101 L14,78 L14,30 Z" />
+    <path android:strokeColor="#2A6E86" android:strokeWidth="0.9" android:fillColor="#00000000"
+        android:pathData="M54,13 L89,33 L89,75 L54,95 L19,75 L19,33 Z" />
+
+    <!-- inner plate -->
+    <path android:fillColor="#0A1522"
+        android:pathData="M54,20 L82,36 L82,72 L54,88 L26,72 L26,36 Z" />
+    <path android:strokeColor="#1E4C5E" android:strokeWidth="0.8" android:fillColor="#00000000"
+        android:pathData="M54,24 L78,38 L78,70 L54,84 L30,70 L30,38 Z" />
+
+    <!-- circuit traces to the corners -->
+    <path android:strokeColor="#2FA9C4" android:strokeWidth="0.9" android:fillColor="#00000000"
+        android:pathData="M54,20 L54,28 M54,80 L54,88 M26,36 L26,46 L36,46 M82,36 L82,46 L72,46 M26,64 L26,56 L36,56 M82,64 L82,56 L72,56" />
+    <path android:fillColor="#54E4FF" android:pathData="M52.6,28h2.8v3h-2.8zM52.6,77h2.8v3h-2.8z" />
+    <path android:fillColor="#FF3D9A" android:pathData="M24.6,44h2.8v2.8h-2.8zM80.6,44h2.8v2.8h-2.8z" />
+    <path android:fillColor="#FFA24A" android:pathData="M24.6,57.2h2.8v2.8h-2.8zM80.6,57.2h2.8v2.8h-2.8z" />
+
+    <!-- helmet crown -->
+    <path android:fillColor="#1B3B55"
+        android:pathData="M38,38 L54,31 L70,38 L73,47 L64,52 L44,52 L35,47 Z" />
+    <path android:strokeColor="#3FD1F0" android:strokeWidth="0.8" android:fillColor="#00000000"
+        android:pathData="M38,38 L54,31 L70,38" />
+
+    <!-- brow ridge -->
+    <path android:fillColor="#0C1A28"
+        android:pathData="M36,50 L72,50 L70,55 L38,55 Z" />
+
+    <!-- visor slit -->
+    <path android:fillColor="#7DF2FF" android:pathData="M39,55.5 L52,55.5 L52,59.5 L39,59.5 Z" />
+    <path android:fillColor="#8BF2FF" android:pathData="M56,55.5 L69,55.5 L69,59.5 L56,59.5 Z" />
+    <path android:fillColor="#061019" android:pathData="M52.2,55 L55.8,55 L55.8,60 L52.2,60 Z" />
+
+    <!-- jaw guard -->
+    <path android:fillColor="#1B3B55"
+        android:pathData="M42,61 L66,61 L62,73 L46,73 Z" />
+    <path android:fillColor="#0A1522" android:pathData="M47,63.5 L61,63.5 L58.6,70.5 L49.4,70.5 Z" />
+    <path android:fillColor="#FF3D9A" android:pathData="M53,64 L55,64 L55,70 L53,70 Z" />
+
+    <!-- cheek fins -->
+    <path android:fillColor="#16324A" android:pathData="M33,50 L38,52 L38,60 L32,56 Z" />
+    <path android:fillColor="#16324A" android:pathData="M75,50 L70,52 L70,60 L76,56 Z" />
+    <path android:strokeColor="#54E4FF" android:strokeWidth="0.7" android:fillColor="#00000000"
+        android:pathData="M33,50 L38,52 M75,50 L70,52" />
+
+    <!-- shoulder slashes -->
+    <path android:fillColor="#FFA24A" android:pathData="M27,66 L35,70 L34,72 L26,68 Z" />
+    <path android:fillColor="#FFA24A" android:pathData="M81,66 L73,70 L74,72 L82,68 Z" />
+
+    <!-- chin spine -->
+    <path android:strokeColor="#2FA9C4" android:strokeWidth="1" android:fillColor="#00000000"
+        android:pathData="M54,73 L54,83" />
+    <path android:fillColor="#FF3D9A" android:pathData="M52,80 L56,80 L54,84 Z" />
+
+    <!-- antenna -->
+    <path android:strokeColor="#54E4FF" android:strokeWidth="1" android:fillColor="#00000000"
+        android:pathData="M54,20 L54,13" />
+    <path android:fillColor="#8BF2FF" android:pathData="M52.6,11h2.8v2.6h-2.8z" />
+    </group>
+</vector>
