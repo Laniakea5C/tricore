@@ -21,6 +21,12 @@
 | [8. 扩展指南](#8-扩展指南) | [8. Extending](TECHNICAL.en.md#8-extending) |
 | [9. 已知限制](#9-已知限制) | [9. Known limitations](TECHNICAL.en.md#9-known-limitations) |
 
+## 功能说明 / Features
+
+面向用户的功能文案（含应用商店短/长描述）：**[中文](FEATURES.zh-CN.md)** · **[English](FEATURES.en.md)**
+
+---
+
 完整技术内容请分别阅读：
 
 - 中文：[docs/TECHNICAL.zh-CN.md](TECHNICAL.zh-CN.md)
