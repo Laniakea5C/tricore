@@ -11,6 +11,40 @@
 
 ---
 
+## Hooks (pick one)
+
+1. **I turned a four-year electronics curriculum into a Cyberpunk 2077 skill tree.**
+2. Other people plan with spreadsheets; I built a skill tree you can tap, drag and level up.
+3. 35 books, 192 chapters, 576 exercises — stuffed into one living star map.
+4. I wired the roadmap to 11 AI brains: DeepSeek, Claude, Gemini on standby.
+5. It is my cyberware: knowledge graph + roadmap + AI tutor, all in one implant.
+6. Exams and jobs become an RPG panel — practise once, gain a skill point.
+7. Open it and it is a star map; tap and it is a skill tree; finish and it is a level.
+8. I did not build a timetable. I built a grindable map for electronics.
+9. If university had a skill tree, it would look like this.
+10. Cyberpunk is not a colour palette here — it is 576 exercises wired into one upgrade path.
+
+---
+
+## Why call it a skill tree
+
+| In a game | Here |
+|---|---|
+| Class branches | Four tracks: AI / chip / robotics / foundation |
+| Skill nodes | 15 knowledge layers |
+| Skill books | 35 textbooks |
+| Levels | 192 chapters |
+| Quests / XP | 576 exercises (A/B/C difficulty) |
+| Skill points | Each finished exercise or chapter lights a node and raises a ring |
+| Talent panel | The graph: tap a track to fan out, tap a book for details |
+| Companion AI | 11 models: explain, evaluate, quiz, read images |
+| Main quest line | Roadmap: freshman → specialisation → master's/PhD → industry |
+| Achievements | Progress: book / track / global rings |
+
+> In one line: **other people's study plans are documents; yours is an interactive skill tree.**
+
+---
+
 ## Knowledge graph · your four years at a glance
 
 Open the app and you get a living star map: four tracks (AI / chip / robotics / foundation), 15 knowledge layers, 35 books and 192 chapters. Bigger nodes mean more practice done; brighter edges mean a path you have already walked.
