@@ -23,7 +23,7 @@
 
 ## 发布说明 / Release notes
 
-[v8.5](RELEASE_NOTES_v8.5.md)
+[v9.8](RELEASE_NOTES_v9.8.md) · [v8.5](RELEASE_NOTES_v8.5.md)
 
 ## 功能说明 / Features
 
