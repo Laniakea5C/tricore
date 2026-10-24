@@ -1,9 +1,4 @@
-# TriCore Features (in-app copy)
-
-> Use: in-app "What's inside" / About screens, store listing, launch posts.
-> Tone: user-facing with a light marketing exaggeration. Numbers in parentheses are real and safe to keep.
-
----
+# TriCore Features
 
 ## One-liner
 
@@ -11,7 +6,7 @@
 
 ---
 
-## Hooks (pick one)
+## Hooks
 
 1. **I turned a four-year electronics curriculum into a Cyberpunk 2077 skill tree.**
 2. Other people plan with spreadsheets; I built a skill tree you can tap, drag and level up.
@@ -54,7 +49,7 @@ Open the app and you get a living star map: four tracks (AI / chip / robotics / 
 - **Tap a book** — straight into its chapters, exercises and templates
 - **Drag / pinch** — smooth, and labels stay glued to their nodes
 
-> Very few study apps turn a curriculum into an interactive graph; fewer still keep 35 books and 192 chapters smooth on one screen.
+> Very few study apps turn a curriculum into an interactive graph.
 
 ---
 
@@ -214,11 +209,11 @@ Pitch follows meaning: open rises (×1.10), close falls (×0.90), and confirm / 
 
 ---
 
-## Store blurb (short, ≤ 80 words)
+## Store blurb
 
 > A study map for electronics students: a 35-book knowledge graph, a staged roadmap, a prompt workbench and a multi-provider AI tutor — 11 models, streaming, reasoning, web search and vision.
 
-## Store blurb (long)
+## Store description
 
 > **One map for your whole degree.**
 >
@@ -232,7 +227,7 @@ Pitch follows meaning: open rises (×1.10), close falls (×0.90), and confirm / 
 
 ---
 
-## Condensed in-app "What's inside" table
+## What's inside
 
 | Module | One line |
 |---|---|
