@@ -161,6 +161,50 @@ Chapters, knowledge points, exercises, tools and resources in one search; result
 
 ---
 
+## Sound design · booting up your cyberware
+
+This is not "add a BGM". The whole cyber soundscape is **synthesised on the phone, sample by sample**.
+
+### Four minutes, 5,292,000 samples, zero audio assets
+
+The dark drone you hear on the graph page is not a downloaded loop pack — it is generated at first launch:
+
+- **Drone bed**: E1 / B1 / E2 saw stacks, each triple-detuned (±0.38%), through two low-pass stages, breathing slowly
+- **Noise tide**: filtered white noise with a 0.025 Hz swell, like air moving deep inside a server room
+- **Twelve low bells**: every 20 seconds, cycling E3 / B2 / G2 / E2 with a 9-second decay
+- **Heartbeat sub**: a 41.2 Hz pulse every 10 seconds — your cyberware's own pulse
+- **Dark reverb**: three parallel comb delays (173 / 211 / 293 ms), then tanh saturation
+
+> Other apps play music. This one writes it.
+
+### A loop with no seam
+
+Every modulation period (0.05 / 0.1 / 0.025 Hz) divides 240 s exactly, and the tail gets a **4-second crossfade**, so the loop point is inaudible. Wear headphones for two hours — no click.
+
+### Why 22.05 kHz mono is a feature
+
+- Streamed through `AudioTrack`, so a long loop costs no `SoundPool` memory
+- Quarter the data of 44.1 kHz stereo: less decoding, less battery
+- Synthesised once on a background thread, cached as PCM, instant afterwards
+- **No network, no licensed audio, no third-party library** — zero copyright risk for stores and commercial use
+
+### Click: 140 milliseconds of mechanical feel
+
+Every tap is a **plastic switch**, not a beep: high-passed noise tick (1.8 ms attack), 220 + 330 Hz body, 1.32 kHz edge resonance, a 21 ms room tail and light tanh saturation.
+
+Pitch follows meaning: open rises (×1.10), close falls (×0.90), and confirm / send / tab changes each get their own nuance — you can hear whether you turned something on or off.
+
+### Three details we refused to skip
+
+1. **Music and effects are decoupled**: turn off the drone and clicks still respond
+2. **Music only on the graph page**: routes, tools and chat stay quiet
+3. **The toggle is remembered**: off stays off
+
+> Others treat sound as decoration; we treat it as interaction.
+> Cyberpunk is not neon — it is every tap having an echo.
+
+---
+
 ## Data and privacy
 
 - The whole curriculum is embedded offline (~830 KB JSON)

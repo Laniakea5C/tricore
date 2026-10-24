@@ -67,6 +67,14 @@ MainActivity
 
 ---
 
+### 2.1 声音实现（Sound.kt）
+
+- 音乐：`buildMusic()` 合成 240 s 单声道 22.05 kHz PCM（E1/B1/E2 三重失谐锯齿 + 噪声潮 + 12 声钟 + 心跳 sub + 三条梳状延迟混响），经 `AudioTrack MODE_STREAM` 循环写入，`cacheDir/sfx/music_v5.pcm` 缓存
+- 循环：所有调制频率整除 240 s，尾部 4 s 交叉淡化
+- 音效：`buildClick()` 合成 140 ms 塑料开关（噪声脉冲 + 220/330 Hz 体 + 1.32 kHz 边缘 + 短尾），WAV 写入缓存后由 `SoundPool` 播放，支持 `pitch` 参数
+- 开关：`tricore_sound` 偏好项持久化；音乐只在图谱页调用 `resumeMusic`，离开即 `pauseMusic`；点击音与音乐开关解耦
+- 线程：合成在 `sfx-build` 线程，写入在 `sfx-stream` 线程，写入失败（track 已释放）用 `runCatching` 吞掉
+
 ## 3. 液态玻璃渲染
 
 ### 3.1 为什么用双 View

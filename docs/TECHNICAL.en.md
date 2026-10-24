@@ -59,6 +59,14 @@ MainActivity
 
 ---
 
+### 2.1 Sound implementation (Sound.kt)
+
+- Music: `buildMusic()` synthesises 240 s of mono 22.05 kHz PCM (triple-detuned E1/B1/E2 saws, noise tide, twelve bells, heartbeat sub, three comb-delay reverb), streamed through `AudioTrack` in `MODE_STREAM`, cached at `cacheDir/sfx/music_v5.pcm`
+- Loop: every modulation frequency divides 240 s; the tail is crossfaded over 4 s
+- Effects: `buildClick()` synthesises a 140 ms plastic switch (noise tick, 220/330 Hz body, 1.32 kHz edge, short tail), written as WAV and played by `SoundPool` with a `pitch` argument
+- Toggle: persisted in `tricore_sound`; music starts only on the graph tab and pauses on leaving; clicks are independent of the music toggle
+- Threads: synthesis on `sfx-build`, streaming on `sfx-stream`; write failures are swallowed with `runCatching`
+
 ## 3. Liquid-glass rendering
 
 ### 3.1 Why two views
