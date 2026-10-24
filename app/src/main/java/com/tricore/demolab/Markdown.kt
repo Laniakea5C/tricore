@@ -35,7 +35,14 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MarkdownText(text: String, modifier: Modifier = Modifier) {
     val uri = LocalUriHandler.current
-    val blocks = rememberBlocks(text)
+    val normalized = normalizeMathDelimiters(text)
+    val blocks = rememberBlocks(normalized)
+    val kept = blocks.sumOf { it.text.length }
+    if (normalized.length > 240 && kept < normalized.length * 0.55) {
+        // parser swallowed content — never hide text, fall back to plain paragraphs
+        Text(normalized, color = P.text, fontSize = 11.5.sp, lineHeight = 17.sp, modifier = modifier)
+        return
+    }
     Column(modifier) {
         blocks.forEach { block ->
             when (block.kind) {
@@ -80,7 +87,61 @@ fun MarkdownText(text: String, modifier: Modifier = Modifier) {
                         }
                     }
                 }
+                "math" -> {
+                    if (block.text.isNotBlank()) {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White.copy(alpha = 0.045f))
+                                .padding(vertical = 9.dp, horizontal = 8.dp)
+                        ) {
+                            MathText(block.text, size = 15f)
+                        }
+                    }
+                }
                 else -> {
+                    if (block.text.contains("$")) {
+                        val parts = block.text.split(Regex("(?=\$)|(?<=\$)"))
+                        // simple: render text pieces and $...$ runs separately
+                        val segments = mutableListOf<Pair<Boolean, String>>()
+                        var inMath = false
+                        val cur = StringBuilder()
+                        for (ch in block.text) {
+                            if (ch == '$') {
+                                if (cur.isNotEmpty()) { segments.add(inMath to cur.toString()); cur.clear() }
+                                inMath = !inMath
+                                continue
+                            }
+                            cur.append(ch)
+                        }
+                        if (cur.isNotEmpty()) segments.add(inMath to cur.toString())
+                        segments.forEach { (math, txt) ->
+                            if (math) {
+                                Text(
+                                    latexInlineToUnicode(txt),
+                                    color = P.text, fontSize = 11.5.sp,
+                                    lineHeight = 17.sp,
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else if (txt.isNotBlank()) {
+                                val fs = when (block.kind) {
+                                    "h1" -> 14f
+                                    "h2" -> 13f
+                                    "h3" -> 12f
+                                    "quote" -> 11f
+                                    else -> 11.5f
+                                }
+                                Text(
+                                    txt, color = if (block.kind == "quote") P.dim else P.text,
+                                    fontSize = fs.sp, lineHeight = (fs * 1.5f).sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                        @Suppress("UNUSED_VARIABLE") val unused = parts
+                        return@Column
+                    }
                     val style = when (block.kind) {
                         "h1" -> 14.sp to FontWeight.Bold
                         "h2" -> 13.sp to FontWeight.SemiBold
@@ -128,6 +189,25 @@ private fun rememberBlocks(text: String): List<Block> = buildList {
     while (i < lines.size) {
         val line = lines[i]
         when {
+            isMathBlock(line) -> {
+                flush()
+                var body = mathBlockContent(line)
+                i++
+                // multi-line $$ ... $$
+                if (!line.trim().endsWith("$$") && !line.trim().endsWith("\\]")) {
+                    val sb = StringBuilder(body)
+                    while (i < lines.size) {
+                        val l = lines[i]
+                        i++
+                        if (l.trim().endsWith("$$") || l.trim().endsWith("\\]")) {
+                            sb.append(" ").append(mathBlockContent(l)); break
+                        }
+                        sb.append(" ").append(l)
+                    }
+                    body = sb.toString()
+                }
+                add(Block("math", body))
+            }
             line.trimStart().startsWith("```") -> {
                 flush()
                 val lang = line.trim().removePrefix("```").trim()

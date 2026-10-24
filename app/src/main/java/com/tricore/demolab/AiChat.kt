@@ -35,11 +35,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -124,6 +127,8 @@ fun AiChatScreen(
     var showModels by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var sendJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var cancelled by remember { mutableStateOf(false) }
 
     var deepThink by remember { mutableStateOf(ai.deepThink()) }
     var webSearch by remember { mutableStateOf(ai.webSearch()) }
@@ -143,6 +148,31 @@ fun AiChatScreen(
 
     val messages = remember { mutableStateListOf<ChatMessage>() }
     val listState = rememberLazyListState()
+    var autoFollow by remember { mutableStateOf(true) }
+    var showJump by remember { mutableStateOf(false) }
+    var followPulse by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        androidx.compose.runtime.snapshotFlow { !listState.canScrollForward }
+            .collect { bottom ->
+                if (bottom) {
+                    autoFollow = true
+                    showJump = false
+                }
+            }
+    }
+    LaunchedEffect(
+        messages.size,
+        messages.lastOrNull()?.text?.length,
+        messages.lastOrNull()?.reasoning?.length,
+        followPulse,
+    ) {
+        if (autoFollow && messages.isNotEmpty()) {
+            withFrameNanos { }
+            listState.scrollToItem(messages.size - 1, Int.MAX_VALUE / 4)
+            withFrameNanos { }
+            listState.scrollToItem(messages.size - 1, Int.MAX_VALUE / 4)
+        }
+    }
     var restored by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         if (!restored) {
@@ -215,18 +245,20 @@ fun AiChatScreen(
         if (body.isBlank() && imageB64 == null) return
         save()
         if (webSearch) status = "正在检索网页…"
+        autoFollow = true
+        showJump = false
         messages.add(ChatMessage("user", body, imageB64, imageMime))
         val replyIndex = messages.size
         messages.add(ChatMessage("assistant", ""))
         input = ""
         imageB64 = null; fileText = null; fileName = null
-        busy = true; status = ""
+        busy = true; status = ""; cancelled = false
         val sysBase = buildString {
             append(UNIVERSAL_SYSTEM_PROMPT)
             if (deepThink) append("\n回答前先写出推理要点，再给结论；复杂问题分步骤。")
             if (webSearch) append("\n如需最新信息，请尝试检索；若接口不支持检索，请明确说明信息可能过时。")
         }
-        scope.launch {
+        sendJob = scope.launch {
             val cfg = AiConfig(provider, apiKey, model, base.ifBlank { provider.base }, kind, modelsPath)
             var sys = sysBase
             if (webSearch && providerId == "deepseek") {
@@ -257,18 +289,56 @@ fun AiChatScreen(
                     )
                 },
             )
+            var result = res.getOrNull()
+            var autoRounds = 0
+            var promptTokens = result?.promptTokens ?: 0
+            var completionTokens = result?.completionTokens ?: 0
+            // 服务端因长度截断时自动续写，拼回同一条气泡
+            while (result?.truncated == true && !cancelled && autoRounds < 2) {
+                autoRounds++
+                if (textBuf.isNotEmpty()) textBuf.append(10.toChar()).append(10.toChar())
+                val cont = buildList {
+                    add(ChatMessage("system", sys))
+                    addAll(messages.dropLast(1))
+                    add(ChatMessage("assistant", textBuf.toString()))
+                    add(ChatMessage("user", "继续，从断开处接着写，不要重复已有内容，不要重新开头。"))
+                }
+                val r2 = AiClient.chatStream(
+                    cfg, cont, deepThink = false, webSearch = false,
+                    onText = { delta ->
+                        textBuf.append(delta)
+                        messages[replyIndex] = ChatMessage(
+                            "assistant", textBuf.toString(),
+                            reasoning = reasonBuf.toString().ifBlank { null }
+                        )
+                    },
+                    onReason = { reasonBuf.append(it) },
+                )
+                val r = r2.getOrNull() ?: break
+                promptTokens += r.promptTokens
+                completionTokens += r.completionTokens
+                result = r
+            }
             busy = false
-            res.onSuccess {
+            if (result != null) {
                 messages[replyIndex] = ChatMessage(
                     "assistant",
-                    it.text.ifBlank { textBuf.toString() },
-                    reasoning = it.reasoning.ifBlank { reasonBuf.toString() }.ifBlank { null }
+                    textBuf.toString().ifBlank { result.text },
+                    reasoning = reasonBuf.toString().ifBlank { null }
                 )
-                ai.addUsage(providerId, it.promptTokens, it.completionTokens)
+                ai.addUsage(providerId, promptTokens, completionTokens)
                 persist()
-                status = "token 输入 ${it.promptTokens} / 输出 ${it.completionTokens}"
-                scope.launch { listState.animateScrollToItem((messages.size - 1).coerceAtLeast(0)) }
-            }.onFailure { status = "失败：${it.message?.take(180)}" }
+                status = "token 输入 $promptTokens / 输出 $completionTokens" +
+                    (if (autoRounds > 0) "（自动续写 $autoRounds 次）" else "") +
+                    (if (result.finishReason.isNotBlank()) " · finish=${result.finishReason}" else " · finish=无")
+            } else {
+                status = if (cancelled || res.isFailure && res.exceptionOrNull() is kotlinx.coroutines.CancellationException) {
+                    "已停止"
+                } else {
+                    "失败：${res.exceptionOrNull()?.message?.take(180)}"
+                }
+            }
+            if (autoFollow) scope.launch { listState.scrollToItem((messages.size - 1).coerceAtLeast(0), Int.MAX_VALUE / 4) }
         }
     }
 
@@ -304,9 +374,32 @@ fun AiChatScreen(
             }
 
             // messages
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            var drag = 0f
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == PointerEventType.Move) {
+                                    val ch = event.changes.firstOrNull()
+                                    if (ch != null) {
+                                        drag += ch.position.y - ch.previousPosition.y
+                                        if (drag > 24f) {
+                                            autoFollow = false
+                                            showJump = true
+                                            drag = 0f
+                                        } else if (drag < -24f) {
+                                            drag = 0f
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 if (messages.isEmpty()) {
@@ -318,6 +411,10 @@ fun AiChatScreen(
                                 "可以直接提问、发教材截图（拍照/相册）或传文本文件；也可以把模板生成的提示词发过来。",
                                 color = P.dim, fontSize = 10.5.sp, lineHeight = 15.sp
                             )
+                            Spacer(Modifier.height(10.dp))
+                            Text("公式会原生渲染：", color = P.muted, fontSize = 10.sp)
+                            Spacer(Modifier.height(4.dp))
+                            MathText("E = mc^2,\\quad \\frac{a}{b} = \\frac{c}{d},\\quad \\int_0^1 x^2\\,dx = \\frac{1}{3}", size = 14f)
                         }
                     }
                 }
@@ -333,39 +430,91 @@ fun AiChatScreen(
                         Text(if (mine) "我" else provider.name, color = if (mine) P.ai else P.muted, fontSize = 9.sp)
                         if (m.imageBase64 != null) Text("[图片]", color = P.dim, fontSize = 9.sp)
                         Spacer(Modifier.height(3.dp))
-                        if (mine) {
-                            Text(m.text, color = P.text, fontSize = 11.5.sp, lineHeight = 17.sp)
-                        } else {
-                            var openThink by androidx.compose.runtime.remember(i) {
-                                androidx.compose.runtime.mutableStateOf(false)
-                            }
-                            if (!m.reasoning.isNullOrBlank()) {
-                                Text(
-                                    if (openThink) "▾ 收起思考过程" else "▸ 思考过程 · 点击展开",
-                                    color = P.ai.copy(alpha = 0.75f), fontSize = 9.5.sp,
-                                    modifier = Modifier.fillMaxWidth()
-                                        .clickable { openThink = !openThink }
-                                        .padding(vertical = 3.dp)
-                                )
-                                if (openThink) {
-                                    Column(
-                                        Modifier.fillMaxWidth()
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(Color.White.copy(alpha = 0.04f))
-                                            .padding(9.dp)
-                                    ) {
-                                        MarkdownText(m.reasoning, Modifier.fillMaxWidth())
+                        androidx.compose.foundation.text.selection.SelectionContainer {
+                            Column {
+                                if (mine) {
+                                    Text(m.text, color = P.text, fontSize = 11.5.sp, lineHeight = 17.sp)
+                                } else {
+                                    var openThink by androidx.compose.runtime.remember(i) {
+                                        androidx.compose.runtime.mutableStateOf(false)
                                     }
-                                    Spacer(Modifier.height(4.dp))
+                                    if (!m.reasoning.isNullOrBlank()) {
+                                        Text(
+                                            if (openThink) "▾ 收起思考过程" else "▸ 思考过程 · 点击展开",
+                                            color = P.ai.copy(alpha = 0.75f), fontSize = 9.5.sp,
+                                            modifier = Modifier.fillMaxWidth()
+                                                .clickable {
+                                                    openThink = !openThink
+                                                    if (openThink) {
+                                                        autoFollow = true
+                                                        showJump = false
+                                                        followPulse++
+                                                    }
+                                                }
+                                                .padding(vertical = 3.dp)
+                                        )
+                                        if (openThink) {
+                                            Column(
+                                                Modifier.fillMaxWidth()
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(Color.White.copy(alpha = 0.04f))
+                                                    .padding(9.dp)
+                                            ) {
+                                                SafeMarkdownText(m.reasoning, Modifier.fillMaxWidth())
+                                            }
+                                            Spacer(Modifier.height(4.dp))
+                                        }
+                                    }
+                                    SafeMarkdownText(m.text, Modifier.fillMaxWidth())
                                 }
                             }
-                            MarkdownText(m.text, Modifier.fillMaxWidth())
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Text(
+                                "复制",
+                                color = P.dim, fontSize = 8.5.sp,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        clipboard.setText(androidx.compose.ui.text.AnnotatedString(m.text))
+                                        status = "已复制"
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
                     }
                 }
                 if (status.isNotBlank()) {
                     item { Text(status, color = P.dim, fontSize = 9.sp) }
                 }
+            }
+
+            if (showJump) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 4.dp, bottom = 6.dp)
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(P.ai.copy(alpha = 0.92f))
+                        .clickable {
+                            autoFollow = true
+                            showJump = false
+                            scope.launch {
+                                repeat(6) {
+                                    listState.scrollToItem(
+                                        (messages.size - 1).coerceAtLeast(0),
+                                        Int.MAX_VALUE / 4
+                                    )
+                                    kotlinx.coroutines.delay(16)
+                                }
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("↓", color = Color(0xFF06101A), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             }
 
             // composer
@@ -430,9 +579,19 @@ fun AiChatScreen(
                     Box(
                         Modifier.clip(CircleShape)
                             .background(if (busy) Color.White.copy(alpha = 0.10f) else P.ai)
-                            .clickable { send(input) }
+                            .clickable {
+                                if (busy) {
+                                    cancelled = true
+                                    AiClient.cancelActive()
+                                    sendJob?.cancel()
+                                    busy = false
+                                    status = "已停止"
+                                } else {
+                                    send(input)
+                                }
+                            }
                             .padding(horizontal = 16.dp, vertical = 11.dp)
-                    ) { Text(if (busy) "…" else "↑", color = if (busy) P.muted else Color(0xFF06101A),
+                    ) { Text(if (busy) "■" else "↑", color = if (busy) Color(0xFFFF7A7A) else Color(0xFF06101A),
                         fontSize = 14.sp, fontWeight = FontWeight.Bold) }
                 }
             }

@@ -10,7 +10,7 @@
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-1.7.5-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**中文** | [English](#english)　·　技术文档：**[中文](docs/TECHNICAL.zh-CN.md)** / **[English](docs/TECHNICAL.en.md)**　·　功能说明：**[中文](docs/FEATURES.zh-CN.md)** / **[English](docs/FEATURES.en.md)**
+**中文** | [English](#english)　·　技术文档：**[中文](docs/TECHNICAL.zh-CN.md)** / **[English](docs/TECHNICAL.en.md)**　·　功能说明：**[中文](docs/FEATURES.zh-CN.md)** / **[English](docs/FEATURES.en.md)**　·　开发记录：**[中文](docs/DEVLOG.md)**
 
 ---
 

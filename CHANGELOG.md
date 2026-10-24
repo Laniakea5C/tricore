@@ -2,6 +2,21 @@
 
 All notable changes to TriCore are documented here. Versions follow `versionCode` / `versionName` in `app/build.gradle.kts`.
 
+## [9.8] — 2026-10-24
+
+### Fixed
+- Long answers could disappear at a formula on screen while the copied text was complete: the Markdown parser swallowed the rest of the message when a display-math block had an irregular closing delimiter
+- Chat bubbles are now rendered line by line (`SafeMarkdownText`): no parse branch can drop content, formulas are only recognised when a single line is fully closed
+
+### Changed
+- Inline formulas (`$...$`, `\(...\)`, `[...]`) render as Unicode inline text; matrices, cases, fractions, roots and stacked `\sum` limits keep rendering in display blocks
+- Stop button aborts the socket immediately (`disconnect()`) instead of waiting for the next streamed chunk
+- Auto-follow now reacts to reasoning growth and to expanding the thinking section
+
+### Added
+- Automatic continuation (up to 2 rounds) when the provider reports `finish_reason=length`, ends the stream without a finish reason, or stops mid-sentence; continued text is appended to the same bubble
+- Status line diagnostics: `token 输入 / 输出 · finish=stop|length|无`
+
 ## [8.5] — 2026-10-24
 
 ### Fixed

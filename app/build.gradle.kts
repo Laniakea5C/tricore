@@ -12,8 +12,8 @@ android {
         applicationId = "com.tricore.demolab"
         minSdk = 26
         targetSdk = 35
-        versionCode = 38
-        versionName = "8.5"
+        versionCode = 51
+        versionName = "9.8"
     }
 
     signingConfigs {

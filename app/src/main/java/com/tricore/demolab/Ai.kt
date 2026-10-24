@@ -180,11 +180,21 @@ data class AiResult(
     val promptTokens: Int = 0,
     val completionTokens: Int = 0,
     val reasoning: String = "",
+    val truncated: Boolean = false,
+    val finishReason: String = "",
 )
 
 /* ------------------------------------------------------------------ client */
 
 object AiClient {
+    @Volatile private var active: java.net.HttpURLConnection? = null
+
+    /** Abort the in-flight request immediately (used by the stop button). */
+    fun cancelActive() {
+        runCatching { active?.disconnect() }
+        active = null
+    }
+
     private const val TAG = "AiClient"
 
     suspend fun listModels(cfg: AiConfig): Result<List<String>> =
@@ -290,9 +300,9 @@ object AiClient {
         if (providerId == "deepseek") {
             body.put("thinking", JSONObject().put("type", if (deepThink) "enabled" else "disabled"))
             if (deepThink) body.put("reasoning_effort", "high")
-            body.put("max_tokens", if (deepThink) 65536 else 8192)
+            body.put("max_tokens", if (deepThink) 131072 else 65536)
         } else {
-            body.put("max_tokens", 4096)
+            body.put("max_tokens", 8192)
             if (deepThink && REASONING_HINT.any { cfg.model.contains(it, true) }) {
                 body.put("reasoning_effort", "medium")
             }
@@ -311,6 +321,9 @@ object AiClient {
             val reason = StringBuilder()
             var prompt = 0
             var completion = 0
+            var truncated = false
+            var sawFinish = false
+            var lastFinish = ""
             var line: String?
             while (true) {
                 line = reader.readLine() ?: break
@@ -322,20 +335,36 @@ object AiClient {
                     prompt = usage.optInt("prompt_tokens", prompt)
                     completion = usage.optInt("completion_tokens", completion)
                 }
-                val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta") ?: continue
+                val choice = obj.optJSONArray("choices")?.optJSONObject(0)
+                val fr = choice?.optString("finish_reason").orEmpty()
+                if (fr.isNotEmpty()) { sawFinish = true; lastFinish = fr }
+                if (fr == "length") truncated = true
+                val delta = choice?.optJSONObject("delta") ?: continue
                 val r = delta.str("reasoning_content")
                 if (r.isNotEmpty()) { reason.append(r); onReason(r) }
                 val c = delta.str("content")
                 if (c.isNotEmpty()) { text.append(c); onText(c) }
             }
+            val nl = 10.toChar()
+            val body = text.toString()
+            // 流结束却没有 finish_reason，说明连接被服务端提前掐断
+            if (!sawFinish && body.isNotBlank()) truncated = true
+            // 结尾不像一句话结束（没有句号/代码块闭合），也视为不完整
+            val tail = body.trimEnd()
+            if (tail.isNotEmpty() && tail.last() !in "...。！？.!?）)】」」`" ) truncated = true
+            val finalText = body.ifBlank { "(空响应)" } +
+                (if (truncated) "$nl$nl> ⚠️ 输出达到长度上限被截断，回复「继续」可接着写。" else "")
             return AiResult(
-                text = text.toString().ifBlank { "(空响应)" },
+                text = finalText,
                 promptTokens = prompt,
                 completionTokens = completion,
                 reasoning = reason.toString(),
+                truncated = truncated,
+                finishReason = lastFinish,
             )
         } finally {
-            conn.disconnect()
+            runCatching { conn.disconnect() }
+            active = null
         }
     }
 
@@ -422,7 +451,8 @@ object AiClient {
                 reasoning = reason.toString(),
             )
         } finally {
-            conn.disconnect()
+            runCatching { conn.disconnect() }
+            active = null
         }
     }
 
@@ -439,6 +469,7 @@ object AiClient {
             setRequestProperty("x-api-key", key)
             setRequestProperty("anthropic-version", "2023-06-01")
         }
+        active = conn
         conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
         val code = conn.responseCode
         if (code !in 200..299) {
@@ -686,7 +717,8 @@ object AiClient {
             }
             return text
         } finally {
-            conn.disconnect()
+            runCatching { conn.disconnect() }
+            active = null
         }
     }
 }
